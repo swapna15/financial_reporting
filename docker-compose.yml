@@ -1,0 +1,23 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8501:8501"       # Streamlit UI — access at http://localhost:8501
+    volumes:
+      # Mount data file at runtime — never baked into the image
+      - ./SAP_GL_Account_Data.xlsx:/app/SAP_GL_Account_Data.xlsx:ro
+      # Persist Ollama models between container restarts (saves re-downloading)
+      - ollama_models:/root/.ollama
+      # Persist audit logs on the host
+      - ./audit_logs:/app/audit_logs
+    environment:
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-llama3.2}
+      # Cloud mode: pass API key via environment (never bake into image)
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+    restart: unless-stopped
+    # Ollama needs enough memory for the model
+    mem_limit: 8g
+
+volumes:
+  ollama_models:
+    # Named volume so models survive container rebuilds

@@ -1,0 +1,13 @@
+[server]
+# Bind to localhost only — blocks access from other machines on the network
+# "localhost" for direct runs; docker-entrypoint.sh overrides to 0.0.0.0 inside the container
+address = "localhost"
+port = 8501
+
+# Disable telemetry sent back to Streamlit servers
+headless = true
+gatherUsageStats = false
+
+[browser]
+# Prevent automatic browser stats collection
+gatherUsageStats = false
