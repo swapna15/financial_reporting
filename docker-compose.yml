@@ -11,9 +11,15 @@ services:
       # Persist audit logs on the host
       - ./audit_logs:/app/audit_logs
     environment:
-      - OLLAMA_MODEL=${OLLAMA_MODEL:-llama3.2}
-      # Cloud mode: pass API key via environment (never bake into image)
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-llama3.2}
+      - DISABLE_OLLAMA=${DISABLE_OLLAMA:-false}
+      # S3 data source (leave blank to use locally mounted file)
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME:-}
+      - S3_DATA_KEY=${S3_DATA_KEY:-SAP_GL_Account_Data.xlsx}
     restart: unless-stopped
     # Ollama needs enough memory for the model
     mem_limit: 8g

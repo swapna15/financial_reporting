@@ -1,9 +1,15 @@
+import io
+import os
 import pandas as pd
 import numpy as np
 from pathlib import Path
 import streamlit as st
 
 DATA_FILE = Path(__file__).parent / "SAP_GL_Account_Data.xlsx"
+
+# S3 is used when S3_BUCKET_NAME is set; cache TTL allows dynamic data refresh
+_USE_S3 = bool(os.environ.get('S3_BUCKET_NAME'))
+_cache_kwargs = {'ttl': 3600, 'show_spinner': 'Loading data from S3…'} if _USE_S3 else {}
 
 COLUMNS = [
     'company_code', 'fiscal_period', 'cost_center', 'functional_area',
@@ -30,9 +36,27 @@ def classify_gl(gl: int) -> str:
     return 'Other'
 
 
-@st.cache_data
+def _load_excel_source():
+    """Return a file-like object (S3) or Path (local) for the Excel data file."""
+    bucket = os.environ.get('S3_BUCKET_NAME')
+    if bucket:
+        import boto3
+        key = os.environ.get('S3_DATA_KEY', 'SAP_GL_Account_Data.xlsx')
+        region = os.environ.get('AWS_REGION', 'us-east-1')
+        s3 = boto3.client(
+            's3',
+            aws_access_key_id=os.environ.get('AWS_ACCESS_KEY_ID'),
+            aws_secret_access_key=os.environ.get('AWS_SECRET_ACCESS_KEY'),
+            region_name=region,
+        )
+        response = s3.get_object(Bucket=bucket, Key=key)
+        return io.BytesIO(response['Body'].read())
+    return DATA_FILE
+
+
+@st.cache_data(**_cache_kwargs)
 def load_data() -> pd.DataFrame:
-    df = pd.read_excel(DATA_FILE, sheet_name="GL Data")
+    df = pd.read_excel(_load_excel_source(), sheet_name="GL Data")
     df.columns = COLUMNS
 
     # Parse fiscal period into month / year / sortable date
