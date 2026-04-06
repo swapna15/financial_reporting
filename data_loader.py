@@ -39,10 +39,16 @@ def classify_gl(gl: int) -> str:
 def _load_excel_source():
     """Return a file-like object (S3) or Path (local) for the Excel data file."""
     bucket = os.environ.get('S3_BUCKET_NAME')
-    if bucket:
-        import boto3
-        key = os.environ.get('S3_DATA_KEY', 'SAP_GL_Account_Data.xlsx')
-        region = os.environ.get('AWS_REGION', 'us-east-1')
+    if not bucket:
+        return DATA_FILE
+
+    import boto3
+    from botocore.exceptions import ClientError, NoCredentialsError
+
+    key = os.environ.get('S3_DATA_KEY', 'SAP_GL_Account_Data.xlsx')
+    region = os.environ.get('AWS_REGION', 'us-east-1')
+
+    try:
         s3 = boto3.client(
             's3',
             aws_access_key_id=os.environ.get('AWS_ACCESS_KEY_ID'),
@@ -51,7 +57,46 @@ def _load_excel_source():
         )
         response = s3.get_object(Bucket=bucket, Key=key)
         return io.BytesIO(response['Body'].read())
-    return DATA_FILE
+
+    except NoCredentialsError:
+        st.error(
+            "**S3 credentials missing.** "
+            "Set `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` in your app secrets.",
+            icon="🔑",
+        )
+        st.stop()
+
+    except ClientError as e:
+        code = e.response['Error']['Code']
+        if code == 'NoSuchBucket':
+            st.error(
+                f"**S3 bucket `{bucket}` does not exist** (region: `{region}`).  \n"
+                "Create the bucket in the AWS console and upload your Excel file, "
+                "or check that `S3_BUCKET_NAME` in your app secrets is spelled correctly.",
+                icon="🪣",
+            )
+        elif code == 'NoSuchKey':
+            st.error(
+                f"**File `{key}` not found in bucket `{bucket}`.**  \n"
+                "Upload `SAP_GL_Account_Data.xlsx` to the bucket, "
+                "or update `S3_DATA_KEY` in your app secrets.",
+                icon="📄",
+            )
+        elif code in ('InvalidAccessKeyId', 'SignatureDoesNotMatch'):
+            st.error(
+                "**AWS credentials are invalid.** "
+                "Double-check `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` in your app secrets.",
+                icon="🔑",
+            )
+        elif code == 'AccessDenied':
+            st.error(
+                f"**Access denied to `s3://{bucket}/{key}`.**  \n"
+                "Make sure the IAM user has `s3:GetObject` permission on this bucket.",
+                icon="🚫",
+            )
+        else:
+            st.error(f"**S3 error ({code}):** {e.response['Error']['Message']}", icon="⚠️")
+        st.stop()
 
 
 @st.cache_data(**_cache_kwargs)
