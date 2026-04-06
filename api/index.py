@@ -2,17 +2,18 @@
 Vercel serverless entry point.
 
 Streamlit cannot run on Vercel (requires persistent WebSocket server).
-This handler redirects all traffic to the Railway-hosted Streamlit app.
+This handler redirects all traffic to the Streamlit Community Cloud app.
 
-Set the RAILWAY_APP_URL environment variable in the Vercel project dashboard
-to point to your Railway deployment URL.
+Set the STREAMLIT_APP_URL environment variable in the Vercel project dashboard
+to point to your Streamlit Community Cloud deployment URL
+(e.g. https://your-app.streamlit.app).
 """
 
 import os
 from http.server import BaseHTTPRequestHandler
 
 
-RAILWAY_URL = os.environ.get("RAILWAY_APP_URL", "")
+STREAMLIT_URL = os.environ.get("STREAMLIT_APP_URL", "")
 
 _FALLBACK_HTML = """<!DOCTYPE html>
 <html lang="en">
@@ -33,7 +34,7 @@ _FALLBACK_HTML = """<!DOCTYPE html>
 <body>
   <div class="card">
     <h1>SAP GL Account Analysis</h1>
-    <p>The app is hosted on Railway. Set <code>RAILWAY_APP_URL</code>
+    <p>The app is hosted on Streamlit Community Cloud. Set <code>STREAMLIT_APP_URL</code>
        in your Vercel project settings to enable the redirect.</p>
   </div>
 </body>
@@ -42,9 +43,9 @@ _FALLBACK_HTML = """<!DOCTYPE html>
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
-        if RAILWAY_URL:
+        if STREAMLIT_URL:
             self.send_response(302)
-            self.send_header("Location", RAILWAY_URL)
+            self.send_header("Location", STREAMLIT_URL)
             self.end_headers()
         else:
             body = _FALLBACK_HTML.encode()
@@ -55,4 +56,4 @@ class handler(BaseHTTPRequestHandler):
             self.wfile.write(body)
 
     def log_message(self, format, *args):
-        pass  # suppress default request logging
+        pass
