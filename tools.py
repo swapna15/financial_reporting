@@ -176,7 +176,8 @@ def dispatch_tool(tool_name: str, tool_input: dict, df: pd.DataFrame) -> dict:
     if fn is None:
         return {'error': f'Unknown tool: {tool_name}'}
     result = fn(df, **{k: v for k, v in tool_input.items() if v is not None})
-    row_count = len(result.get('df', pd.DataFrame()) or pd.DataFrame())
+    _df = result.get('df')
+    row_count = len(_df) if (_df is not None and not _df.empty) else 0
     log_data_access(tool_name, tool_input, row_count)
     return result
 
@@ -247,7 +248,7 @@ def format_tool_result(result: dict) -> str:
             lines.append(f"**Total Variance (Actual – Plan):** {_fmt(result['total_variance'])}\n")
         for dim, dim_df in result['drivers'].items():
             lines.append(f"\n**{dim}:**")
-            lines.append(_df_to_text(dim_df, max_rows=10))
+            lines.append(_df_to_text(dim_df))
 
     return '\n'.join(lines) if lines else 'No results.'
 
