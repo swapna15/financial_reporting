@@ -260,32 +260,36 @@ def render_sidebar(summary: dict) -> str:
     with st.sidebar:
         # ---- Inference mode selector ----
         st.markdown('### Inference Mode')
-        mode = st.radio(
-            'Where should analysis run?',
-            options=['local', 'cloud'],
-            format_func=lambda m: '🔒 Local only (Ollama)' if m == 'local' else '☁️  Cloud (Anthropic API)',
-            key='inference_mode',
-            help=(
-                'Local: all data and prompts stay on this machine (Ollama required).\n'
-                'Cloud: summaries are sent to Anthropic API for narrative generation.'
-            ),
-        )
+
+        # Check Ollama availability once per session (avoids repeated network calls)
+        if 'ollama_up' not in st.session_state:
+            st.session_state['ollama_up'] = ollama_available()
+        ollama_up = st.session_state['ollama_up']
+
+        if ollama_up:
+            mode = st.radio(
+                'Where should analysis run?',
+                options=['local', 'cloud'],
+                format_func=lambda m: '🔒 Local only (Ollama)' if m == 'local' else '☁️  Cloud (Anthropic API)',
+                key='inference_mode',
+                help=(
+                    'Local: all analysis and inference runs on this machine (Ollama).\n'
+                    'Cloud: summaries are sent to Anthropic API for narrative generation.'
+                ),
+            )
+        else:
+            mode = 'cloud'
+            st.session_state['inference_mode'] = 'cloud'
 
         if mode == 'local':
-            is_up = ollama_available()
-            if is_up:
-                models = list_local_models()
-                model_names = [m.split(':')[0] for m in models]  # strip tag for display
-                st.success(f'Ollama running — {len(models)} model(s) available')
-                if models:
-                    chosen = st.selectbox('Model', options=models,
-                                          index=0, key='ollama_model')
-                    st.session_state['local_model'] = chosen
-                else:
-                    st.warning('No models pulled yet.\n`ollama pull llama3.2`')
+            models = list_local_models()
+            st.success(f'Ollama running — {len(models)} model(s) available')
+            if models:
+                chosen = st.selectbox('Model', options=models,
+                                      index=0, key='ollama_model')
+                st.session_state['local_model'] = chosen
             else:
-                st.error('Ollama not running.')
-                st.code('# Install:\nbrew install ollama\n\n# Start:\nollama serve\n\n# Pull a model:\nollama pull llama3.2', language='bash')
+                st.warning('No models pulled yet.\n`ollama pull llama3.2`')
         else:
             api_key_set = bool(os.environ.get('ANTHROPIC_API_KEY'))
             if api_key_set:
