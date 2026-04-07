@@ -280,16 +280,12 @@ def run_conversation_turn(
     tool_calls = []
 
     while True:
-        # extra_headers requests Anthropic not to log/retain prompt data.
-        # Requires an enterprise Zero Data Retention agreement to take effect;
-        # harmless to include otherwise and signals intent.
         response = client.messages.create(
             model='claude-sonnet-4-6',
             max_tokens=4096,
             system=SYSTEM_PROMPT,
             tools=TOOLS,
             messages=messages,
-            extra_headers={'anthropic-beta': 'zero-data-retention-1'},
         )
 
         if response.stop_reason == 'tool_use':

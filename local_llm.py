@@ -6,7 +6,7 @@ Architecture:
   2. Analysis          — runs entirely in analysis.py (pandas, no network)
   3. Narrative         — Ollama local LLM writes the summary from pre-computed stats
 
-Nothing leaves the machine. No data, no summaries, no row counts.
+All analysis runs locally. No external API calls are made.
 
 Setup:
   brew install ollama

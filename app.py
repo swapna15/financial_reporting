@@ -349,7 +349,7 @@ def main():
     st.markdown('<p class="sub-title">Conversational financial analysis — fully local or cloud</p>', unsafe_allow_html=True)
     st.divider()
 
-    # Load data (always local — Excel file never leaves the machine)
+    # Load data
     if st.session_state.df is None:
         with st.spinner('Loading SAP GL data…'):
             st.session_state.df = load_data()
@@ -361,7 +361,7 @@ def main():
 
     # Mode indicator banner
     if mode == 'local':
-        st.info('🔒 **Local mode** — all analysis and inference runs on this machine. No data is sent externally.')
+        st.info('🔒 **Local mode** — all analysis and inference runs on this machine using Ollama.')
     else:
         st.warning('☁️  **Cloud mode** — aggregated summaries are sent to Anthropic API for narrative generation.')
 

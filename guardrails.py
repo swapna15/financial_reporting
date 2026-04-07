@@ -35,7 +35,7 @@ _audit_logger.addHandler(_fh)
 
 
 def audit(event: str, **kwargs):
-    """Write a structured audit record. Content never leaves this machine."""
+    """Write a structured audit record."""
     _audit_logger.info(f"{event} | " + " | ".join(f"{k}={v}" for k, v in kwargs.items()))
 
 
@@ -111,7 +111,7 @@ def sanitize_input(text: str) -> tuple[bool, str]:
 
 # How many rows (at most) are included in a tool-result payload sent to Claude.
 # The full DataFrame is always displayed locally in the UI; only this truncated
-# version leaves the machine inside the API request.
+# version is included in the API request.
 API_MAX_ROWS = 8
 
 
