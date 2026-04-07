@@ -260,6 +260,9 @@ def render_sidebar(summary: dict) -> str:
     with st.sidebar:
         # ---- Inference mode selector ----
         st.markdown('### Inference Mode')
+        # Default to cloud when Ollama is not available (e.g. Streamlit Community Cloud)
+        if 'inference_mode' not in st.session_state:
+            st.session_state['inference_mode'] = 'local' if ollama_available() else 'cloud'
         mode = st.radio(
             'Where should analysis run?',
             options=['local', 'cloud'],
