@@ -4,19 +4,12 @@ on:
   push:
     branches: [main]
 
-# Streamlit Community Cloud auto-deploys from GitHub — no job needed for it.
-# This workflow only handles the Vercel redirect layer.
-
+# Streamlit Community Cloud auto-deploys from GitHub on every push to main.
+# No additional CI steps are required.
 jobs:
-  deploy-vercel:
-    name: Deploy to Vercel
+  notify:
+    name: Deployment triggered
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Deploy to Vercel (production)
-        run: npx vercel --prod --yes --token "$VERCEL_TOKEN"
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      - name: Confirm push received
+        run: echo "Push to main received. Streamlit Community Cloud will auto-deploy."

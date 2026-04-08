@@ -19,11 +19,8 @@ flowchart TB
     %% ── Deployment Targets ─────────────────────────────────────────────────
     subgraph DEPLOY["🚀  Deployment"]
         SCC[Streamlit Community Cloud\nCloud Mode]
-        VERCEL[Vercel\nRedirect Layer]
         DOCKER[Docker\nLocal Mode]
         GHA -->|auto-deploy| SCC
-        GHA -->|auto-deploy| VERCEL
-        VERCEL -->|302 redirect| SCC
     end
 
     %% ── Application ────────────────────────────────────────────────────────
@@ -118,7 +115,6 @@ sequenceDiagram
 | Component | Platform | Purpose |
 |---|---|---|
 | Streamlit App | Streamlit Community Cloud | Hosts the UI (Cloud Mode) |
-| Redirect | Vercel | Routes custom domain → SCC |
 | Local Dev | Docker + Ollama | Full local mode, no API costs |
 | Data | AWS S3 (`financial-reporting-1`) | Single source of truth for Excel data |
 | CI/CD | GitHub Actions | Auto-deploys SCC + Vercel on push to `main` |
