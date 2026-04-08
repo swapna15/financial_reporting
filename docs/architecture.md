@@ -16,11 +16,17 @@ flowchart TB
         GH -->|push to main| GHA
     end
 
-    %% ── Deployment Targets ─────────────────────────────────────────────────
+    %% ── Deployment ─────────────────────────────────────────────────────────
     subgraph DEPLOY["🚀  Deployment"]
         SCC[Streamlit Community Cloud\nCloud Mode]
-        DOCKER[Docker\nLocal Mode]
         GHA -->|auto-deploy| SCC
+    end
+
+    %% ── Local Dev ──────────────────────────────────────────────────────────
+    subgraph LOCAL_DEV["💻  Local Development"]
+        DOCKER[Docker\nmake run]
+        OLLAMA[Ollama · llama3.2\nlocalhost:11434]
+        DOCKER --> OLLAMA
     end
 
     %% ── Application ────────────────────────────────────────────────────────
@@ -34,9 +40,9 @@ flowchart TB
             AN[analysis.py\nPandas · Travel · Variance · Drivers]
         end
 
-        subgraph INFERENCE["Inference Layer"]
+        subgraph INFER["Inference Layer"]
             TOOLS[tools.py\nClaude tool dispatcher]
-            LOCAL[local_llm.py\nIntent detection · Ollama client]
+            LLM[local_llm.py\nIntent detection · Ollama client]
         end
 
         UI --> GR
@@ -44,19 +50,20 @@ flowchart TB
         UI --> DL
         UI --> AN
         AN --> TOOLS
-        AN --> LOCAL
+        AN --> LLM
     end
 
-    %% ── AI Backends ────────────────────────────────────────────────────────
-    subgraph AI["🤖  AI Backends"]
-        CLAUDE[Anthropic Claude API\nclaude-sonnet-4-6\nCloud Mode only]
-        OLLAMA[Ollama · llama3.2\nLocal Docker only]
+    %% ── AI Backend (Cloud) ─────────────────────────────────────────────────
+    subgraph AI["🤖  AI Backend"]
+        CLAUDE[Anthropic Claude API\nclaude-sonnet-4-6]
     end
 
     %% ── Cross-boundary connections ─────────────────────────────────────────
     S3 -->|boto3 · download at startup| DL
+    SCC --> APP
+    DOCKER --> APP
     TOOLS -->|tool-use API| CLAUDE
-    LOCAL -->|HTTP localhost:11434| OLLAMA
+    LLM -->|HTTP| OLLAMA
 ```
 
 ---
@@ -86,11 +93,11 @@ sequenceDiagram
     UI->>AN: travel_expense_report() / actuals_vs_plan() /<br/>period_comparison() / variance_driver_analysis()
     AN-->>UI: result {df, totals, title}
 
-    alt Cloud Mode
-        UI->>AI: Claude API (tool-use, top 8 rows only)
+    alt Cloud Mode (Streamlit Community Cloud)
+        UI->>AI: Claude API · tool-use · top 8 rows only
         AI-->>UI: narrative text
-    else Local Mode
-        UI->>AI: Ollama HTTP (aggregated stats only)
+    else Local Mode (Docker)
+        UI->>AI: Ollama HTTP · aggregated stats only
         AI-->>UI: narrative text
     end
 
@@ -114,7 +121,7 @@ sequenceDiagram
 
 | Component | Platform | Purpose |
 |---|---|---|
-| Streamlit App | Streamlit Community Cloud | Hosts the UI (Cloud Mode) |
+| Streamlit App | Streamlit Community Cloud | Hosts the UI — auto-deploys on push to `main` |
 | Local Dev | Docker + Ollama | Full local mode, no API costs |
 | Data | AWS S3 (`financial-reporting-1`) | Single source of truth for Excel data |
-| CI/CD | GitHub Actions | Auto-deploys SCC + Vercel on push to `main` |
+| CI/CD | GitHub Actions | Triggers SCC auto-deploy on push to `main` |
